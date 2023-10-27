@@ -1,0 +1,130 @@
+
+Function Get_Data_Query (sQuery, sEnv)
+	Set d_Data= createobject("Scripting.Dictionary")
+	
+	If sEnv =2  Then
+		sDBEnv = "ORFG"
+		sUserId = "prudread"
+		sPassword = "today"
+	else
+		sDBEnv = "SYMG"
+		sUserId =  "GBAUVG1"
+		sPassword = "Cardiff5"
+	End If
+	
+	Set con=createobject("adodb.connection")
+	Set rs=createobject("adodb.recordset")
+	con.open "Driver={Microsoft ODBC for Oracle};ConnectString="& sDBEnv &"TCP.world;Uid="& sUserID &"; Pwd="& sPassword &";"
+	rs.open sQuery, con
+	If Not rs.BOF And Not rs.EOF Then
+		rs.MoveFirst
+		do while (Not rs.EOF)
+			sValue =""
+            	'print info from fields to the immediate window
+            		icount = rs.Fields.Count-1
+            		For i = 0 To icount
+            		'DataTable.Value(rs.Fields.Item(i).Value ,
+            			if i = 0 then
+            				sValue =  rs.Fields.Item(i).Value & "||"
+            			else
+            				sValue = sValue & rs.Fields.Item(i).Value & "||"
+            			End If
+            		Next            		
+            		rs.MoveNext
+        	loop
+	End If
+	
+	rs.close
+	con.close
+	'Release Connection objects
+	Set rs= nothing
+	Set con= nothing
+
+	
+	Get_Data_Query = sValue
+End Function
+
+'Function to get details of all invoices from Symphony.
+Function Get_SYM_Data_Query (sQuery)
+
+	Set d_Data= createobject("Scripting.Dictionary")
+	
+			sDBEnv = "SYMG"
+		sUserId =  "GBAUVG1"
+		sPassword = "Cardiff5"
+	
+	Set con=createobject("adodb.connection")
+	Set rs=createobject("adodb.recordset")
+	con.open "Driver={Microsoft ODBC for Oracle};ConnectString="& sDBEnv &"TCP.world;Uid="& sUserID &"; Pwd="& sPassword &";"
+	rs.open sQuery, con
+	If Not rs.BOF And Not rs.EOF Then
+		rs.MoveFirst
+		i = 1
+		do while (Not rs.EOF)
+			sValue =""
+            	'print info from fields to the immediate window
+            		icount = rs.Fields.Count-1
+            		DataTable.SetCurrentRow(i)
+            		 DataTable.Value("Country",1)= rs.Fields.Item(0).Value 
+			datatable.value("Typ",1)= rs.Fields.Item(1).Value 
+			datatable.value("Source",1)= rs.Fields.Item(2).Value 
+			datatable.value("Policy Id",1)= rs.Fields.Item(3).Value 
+			datatable.value("Invoice Id",1)= rs.Fields.Item(4).Value 
+			datatable.value("Amount",1)= rs.Fields.Item(5).Value 
+			datatable.value("Currency",1)= rs.Fields.Item(6).Value 
+			datatable.value("Invoice Dat",1)= rs.Fields.Item(7).Value 
+			datatable.value("Due dat",1)= rs.Fields.Item(8).Value 
+			datatable.value("Premium Start Date",1)= rs.Fields.Item(9).Value 
+			datatable.value("Premium End Date",1)= rs.Fields.Item(10).Value 
+			datatable.value("Manual Flag",1)= rs.Fields.Item(11).Value 
+			datatable.value("Broker",1)= rs.Fields.Item(12).Value 
+			datatable.value("Ledger flag",1)= rs.Fields.Item(13).Value 
+            			
+            		
+            		i= i+1
+            		rs.MoveNext
+        	loop
+	End If
+	
+	rs.close
+	con.close
+	'Release Connection objects
+	Set rs= nothing
+	Set con= nothing
+
+	
+End Function
+
+'Function to get details Sym_AP_Query/ Sym_AR_Query.
+Function Get_SYM_AP_AR_Data_Query (sQuery)
+
+	Set d_Data= createobject("Scripting.Dictionary")
+	
+			sDBEnv = "SYMG"
+		sUserId =  "GBAUVG1"
+		sPassword = "Cardiff5"
+	
+	Set con=createobject("adodb.connection")
+	Set rs=createobject("adodb.recordset")
+	con.open "Driver={Microsoft ODBC for Oracle};ConnectString="& sDBEnv &"TCP.world;Uid="& sUserID &"; Pwd="& sPassword &";"
+	rs.open sQuery, con
+	If Not rs.BOF And Not rs.EOF Then
+		rs.MoveFirst
+		i = 1
+		do while (Not rs.EOF)
+			sValue =""
+            	       'print info from fields to the immediate window
+            		sError= rs.Fields.Item(1).Value             		
+            		rs.MoveNext
+        	loop
+	End If
+	
+	rs.close
+	con.close
+	'Release Connection objects
+	Set rs= nothing
+	Set con= nothing
+Get_SYM_AP_AR_Data_Query = sError
+	
+End Function
+

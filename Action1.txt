@@ -1,0 +1,153 @@
+
+Dim SYM_AP_Error
+Dim SYM_RA_Error
+csvFilePath ="J:\Cross_Unit_Data\Infosys\IVS\IVS\INBSUG1\OF Solution\Result\OF_Run_" &Replace(FormatDateTime(Date, 0), "/", "_") & ".xlsx"
+Get_SYM_Data_Query (Sym_Invoice_Query)
+iRow = DataTable.GetSheet(1).GetRowCount
+For i = 1 To DataTable.GetSheet(1).GetRowCount
+    bstatus = "Interfaced"
+    bFlag = TRUE
+    DataTable.SetCurrentRow(i)
+    SYM_AP_Error = ""
+    SYM_RA_Error = ""
+    i_inv_id = DataTable.value("Invoice Id",1)
+    sAmount = DataTable.value("Amount",1)
+'    msgbox sAmount
+    sBroker = DataTable.value("Broker",1)
+    
+    Dim squery
+    squery = Sym_AP_Query & i_Inv_id & "%'"
+    SYM_AP_Error = Get_SYM_AP_AR_Data_Query( squery)
+    
+    squery = Sym_AR_Query & i_Inv_id &        "%')"
+    SYM_RA_Error = Get_SYM_AP_AR_Data_Query( squery)
+    
+    'If records are not in symphony interface table add them to failur record
+    If  not (ucase(SYM_AP_Error) ="TRANSFORMED" Or  ucase(SYM_RA_Error) ="TRANSFORMED") Then
+        DataTable.value("RA_Interfaced",1) = "No"
+        DataTable.value("RA_Status",1) = "Failed at Symphony"
+        DataTable.value("AP_Interfaced",1) = "No"
+        DataTable.value("AP_Status",1) = "Failed at Symphony"
+        bFlag = FALSE
+    End If
+    
+    'If invoice is interfaced correctly from symphony check prudence tables
+    If bFlag Then
+        'If invoice invoice interfaced correctly from symphony first check if amount is >0 then, it will be interface to AR
+        If sAmount > 0 Then
+            'First check teh base AR table for sucessfull interface
+            squery = OF_AR_Inv_Base_Table_Query & i_Inv_id &        "%'"
+            s_OF_Base_table  = ""
+            s_OF_Base_table = Get_Data_Query( squery,2)
+            'If record found in base table inovice is sceussfully interfaced
+            If s_OF_Base_table <> "" Then
+	                sBase =split(s_OF_Base_table,"||")
+	                DataTable.value("RA_Cust Trx Id",1) = sBase(0)
+	                DataTable.value("RA_trx number",1) = sBase(1)
+	                DataTable.value("RA_trx date",1) 				= sBase(2)
+	                DataTable.value("RA_due date",1) 	= sBase(3)
+	                DataTable.value("RA_amount due remaining",1) = sBase(7)
+	                DataTable.value("RA_Operating unit",1) 	= sBase(4)
+	                DataTable.value("RA_org Id",1) = sBase(5)
+	                DataTable.Value("RA_Name source",1) = sBase(6)
+	                DataTable.value("RA_Status",1) = "inovice Is sucessfully interfaced in RA tables"
+	                DataTable.value("RA_Interfaced",1) = "Yes"
+	          else
+	                squery = OF_AR_Error_query & i_Inv_id &        "%'"
+	                d_OF_AR_Query2 = ""
+	                d_OF_AR_Query2 = Get_Data_Query( squery,2)
+	                
+	                'If invoice found in error table log into failure else check interface table for ar
+                	If d_OF_AR_Query2 <> "" Then
+                    		sBase =split(d_OF_AR_Query2,"||")
+	                    DataTable.value("RA_Error",1) = sBase(1)
+	                    DataTable.value("RA_Status",1) = "RA interface error"
+	                    DataTable.value("RA_Interfaced",1) = "Yes"
+	             else
+	                    squery = OF_AR_query1 & i_Inv_id &        "%'"
+	                    d_OF_AR_Query1= ""
+	                    d_OF_AR_Query1 = Get_Data_Query( squery,2)
+	                    'If invoice found in interface table log into failure else log into not found in AR
+                    		If d_OF_AR_Query1<>"" Then
+	                        sBase =split(d_OF_AR_Query1,"||")
+	                        DataTable.value("RA_Error",1) = sBase(1)
+	                        DataTable.value("RA_Status",1) = "RA interface error"
+	                        DataTable.value("RA_Interfaced",1) = "Yes"
+                        	else
+                        		DataTable.value("RA_Status",1) = "Not found in RA Base Or Error tables"
+                        		DataTable.value("RA_Interfaced",1) = "No"
+                        	end If
+                      end if
+                  end If
+	End if	        
+  
+  'begining of AP checks only when amount is negative or sBroker = -1
+		If sAmount > 0 or (sBroker =  "" or isnull(sBroker )) Then
+			'check in base table for sucessful import
+			squery = OF_AP_Inv_Base_Table_Query & i_Inv_id & "%'"
+			d_OF_AP_Base_table  = ""
+			 d_OF_AP_Base_table = Get_Data_Query(squery,2)
+			'If record found enter record to scuess array else check for failure
+			If d_OF_AP_Base_table<>"" Then
+				sBase =split(d_OF_AP_Base_table,"||")
+	                DataTable.value("AP_Cust Trx Id",1) = sBase(0)
+	                DataTable.value("AP_Operating unit",1) 	= sBase(1)
+	                DataTable.Value("AP_Name source",1) = sBase(2)
+	                DataTable.value("AP_trx date",1) 				= sBase(3)
+	                DataTable.value("AP_invoice_amount",1) = sBase(4)
+	                DataTable.value("AP_trx number",1) = sBase(5)
+	                DataTable.value("AP_due date",1) 	= sBase(6)
+	                DataTable.value("AP_amount due remaining",1) = sBase(7)
+	                DataTable.Value("AP_Gross_Amount",1) = sBase(8)
+	                DataTable.value("AP_Status",1) = "inovice Is sucessfully interfaced in AP tables"
+	                DataTable.value("AP_Interfaced",1) = "Y	es"
+			else
+				'check the error query 1
+				squery = OF_AP_Error_Query1 & i_Inv_id & "%'"
+				 d_OF_AP_Error1 = ""
+				 d_OF_AP_Error1= Get_Data_Query(squery,2)
+				If d_OF_AP_Error1 <> "" Then
+					sBase =split(d_OF_AP_Error1,"||")
+		                    DataTable.value("AP_Error",1) = sBase(1)
+		                    DataTable.value("AP_Status",1) = "AP interface error"
+		                    DataTable.value("AP_Interfaced",1) = "Yes"
+				Else
+				'check the error query 2
+					squery = OF_AP_Error_Query2 & i_Inv_id & "%'"
+					 d_OF_AP_Error2 = ""
+					 d_OF_AP_Error2= Get_Data_Query(squery,2)
+					If d_OF_AP_Error2 <> "" Then
+						sBase =split(d_OF_AP_Error2,"||")
+			                    DataTable.value("AP_Error",1) = sBase(1)
+			                    DataTable.value("AP_Status",1) = "AP interface error"
+			                    DataTable.value("AP_Interfaced",1) = "Yes"
+					else
+						'else check for AP interface tables
+							squery = OF_AP_interface_query & i_Inv_id & "%'"
+							d_OF_AP_Query1 = ""
+							d_OF_AP_Query1= Get_Data_Query(squery,2)
+							If d_OF_AP_Query1 <> "" Then
+'								sBase =split(d_OF_AP_Error1,"||")
+								sBase =split(d_OF_AP_Query1,"||")
+					                    DataTable.value("AP_Error",1) = sBase(1)
+					                    DataTable.value("AP_Status",1) = "AP interface error"
+					                    DataTable.value("AP_Interfaced",1) = "Yes"
+								
+							else
+								
+					                    DataTable.value("AP_Status",1) = "Not found in AP Base Or Error tables"
+					                    DataTable.value("AP_Interfaced",1) = "NO"
+							end if 							
+					end if 
+				End If
+				
+			End If
+		End If
+		'End of AP check
+  
+  
+  End If
+                    
+                Next
+                
+             DataTable.ExportSheet csvFilePath ,1

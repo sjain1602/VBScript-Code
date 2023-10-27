@@ -1,0 +1,132 @@
+
+
+'Symphony Queries
+
+Sym_Invoice_Query = " SELECT                                                          " & _
+"     c.short_name,                                                       " & _
+"     a.typ,                                                      " & _
+"     nvl(b.created_source, 'Symphony'),                          " & _
+"     a.bupiy_id,                                                 " & _
+"     a.id,                                               " & _
+"     a.total_amt,                                                " & _
+"     a.orcuy_code,                                               " & _
+"     a.dat,                                                      " & _
+"     a.paymt_due_dat,                                            " & _
+"     a.start_dat,                                                " & _
+"     a.end_dat,                                                  " & _
+"     a.manual_orsus_id,                                          " & _
+"     a.pol_orbrr_ornnn_id,                             " & _
+"     d.collect_money_Flag ,                                           " & _
+"     b.orcur_ornnn_id                                           " & _
+" FROM                                                            " & _
+"     tbpo_invoices          a,                                   " & _
+"     tbbu_policies          b,                                   " & _
+"     tbor_ncm_organisations c,                                    " & _
+"     tbpo_pol_brokers d                                    " & _
+" WHERE                                                           " & _
+"  d.bupiy_id = b.id   " &_
+" AND trunc(a.dat) between d.Effect_from_dat and d.effect_to_dat" &_
+" AND         b.ornon_id = c.id                                       " & _
+"     AND a.bupiy_id = b.id                                       " & _
+"     AND b.created_source IS NULL                                " & _
+"     AND trunc(a.dat) = to_date(sysdate - 2, 'dd-mon-YY')        " & _
+" ORDER BY                                                        " & _
+"     c.short_name,                                               " & _
+"     a.bupiy_id,                                                 " & _
+"     a.typ,                                                      " & _
+"     a.id                                                      " 
+						
+						
+Sym_AP_Query = "select distinct a.INVOICE_NUM,a.error_code from tbpo_invoices_interface a where INVOICE_NUM like '"
+
+Sym_AR_Query = "select distinct a.INTERFACE_LINE_ATTRIBUTE1,a.error_code from tbpo_interface_lines a where INTERFACE_LINE_ATTRIBUTE1  in ('"
+
+'OF queries for AR
+OF_AR_Inv_Base_Table_Query = " SELECT			 a.INTERFACE_HEADER_ATTRIBUTE2,									" & _
+"     a.customer_trx_id,                              "   & _
+"     a.trx_number,                                   "   & _
+"     a.trx_date,                                     "   & _
+"     d.due_date,                                     "   & _
+"     b.name operating_unit,                          "   & _
+"     d.org_id,                                       "   & _
+"     c.name source,                                  "   & _
+"     d.amount_due_remaining                          "   & _
+" FROM                                                "   & _
+"     ra_customer_trx_all       a,                    "   & _
+"     hr_all_organization_units b,                    "   & _
+"     ra_batch_sources_all      c,                    "   & _
+"     ar_payment_schedules_all  d                     "   & _
+" WHERE                                               "   & _
+"         a.created_by = 1401                         "   & _
+"     AND a.org_id = b.organization_id                "   & _
+"     AND a.batch_source_id = c.batch_source_id       "   & _
+"     AND a.customer_trx_id = d.customer_trx_id       "   & _
+"     AND c.name <> 'SCORE'                           "   & _
+"     AND a.trx_number LIKE '"    
+
+
+OF_AR_Error_query = "SELECT                                                  " & _
+						" b.trx_number,a.message_text                            " & _
+						"FROM                                                    " & _
+						"    ra_interface_errors_all a,                          " & _
+						"    ra_interface_lines_all  b                           " & _
+						"WHERE                                                   " & _
+						"        a.interface_line_id = b.interface_line_id       " & _
+						"    AND b.creation_date >= to_date(sysdate - 1, 'dd-mon-YY')                 " & _
+						"    AND b.created_by = 1401                             " & _
+						"    AND b.batch_source_name <> 'SCORE'                  " & _
+						"    and b.trx_number like '" 
+
+
+OF_AR_query1 = "Select trx_number, trx_number from  ra_interface_lines_all where trx_number like '"
+
+'OF qureies for AP
+OF_AP_Inv_Base_Table_Query = 	" 	SELECT                           		" & _              
+	"    a.invoice_num,                        "  & _                     
+	" 	b.name operating_unit,                 "  & _                    
+	" 	a.source,                              "  & _                    
+	" 	a.invoice_date,                        "  & _                    
+	" 	a.invoice_amount     ,                 "  & _
+	" 	c.invoice_id,c.due_Date,               "  & _
+	" 	c.amount_remaining,                    "  & _
+	" 	c.gross_amount                         "  & _
+	" FROM                                     "  & _                      
+	" 	ap_invoices_all           a,           "  & _                    
+	" 	hr_all_organization_units b,           "  & _
+	" 	ap_payment_schedules_all c             "  & _
+	" WHERE                                    "  & _                      
+	" 		a.created_by = 1401                "  & _                    
+	" 	AND a.org_id = b.organization_id       "  & _                    
+	" 	and c.invoice_id = a.invoice_id        "  & _
+	" 	and a.invoice_num like '"  
+
+OF_AP_Error_Query1 = "SELECT a.invoice_num,                                                           " & _
+							"       a.source,                                                           " & _
+							"       a.org_id,                                                      " & _
+							"       b.reject_lookup_code                                                " & _
+							"  FROM ap_interface_rejections b, ap_invoices_interface a                  " & _
+							"WHERE     a.creation_date >= to_date(sysdate - 1, 'dd-mon-YY')            " & _
+							"       AND a.created_by = 1401                                             " & _
+							"       AND parent_table = 'AP_INVOICES_INTERFACE'                          " & _
+							"       AND b.parent_id = a.invoice_id                                      " & _
+							"       and a.invoice_num like '" 
+
+
+OF_AP_Error_Query2 = "SELECT DISTINCT                                                            " & _
+						"    b.reject_lookup_code,                                                  " & _
+						"    a.invoice_id,                                                          " & _
+						"    a.invoice_num                                                          " & _
+						"FROM                                                                       " & _
+						"    ap_interface_rejections    b,                                          " & _
+						"    ap_invoices_interface      a,                                          " & _
+						"    ap_invoice_lines_interface c                                           " & _
+						"WHERE                                                                      " & _
+						"        a.created_by = 1401                                                " & _
+						"    AND parent_table = 'AP_INVOICE_LINES_INTERFACE'                        " & _
+						"    AND b.parent_id = c.invoice_line_id                                    " & _
+						"    AND a.invoice_id = c.invoice_id                                        " & _
+						"    AND a.invoice_num LIKE '"
+
+
+
+OF_AP_interface_query = "Select a.invoice_id,a.Invoice_num from ap_invoices_interface a where a.invoice_num like '"
